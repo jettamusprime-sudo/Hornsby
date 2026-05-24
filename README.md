@@ -30,6 +30,46 @@ The first version should focus on a small, reliable base that can:
 
 The robot should stay simple at the beginning. A clean foundation will make it easier to add sensors, vision, autonomy, and AI behavior later.
 
+## Physical AI on Mac
+
+Hornsby starts with a perception-first physical AI stack for Apple Silicon Macs.
+
+The first computer vision path uses YOLO26 through MLX, which runs natively on Apple Silicon using Metal acceleration. This gives the project a fast local object-detection loop for hackathon demos and early robot behavior experiments.
+
+The goal is simple:
+
+- see objects through an image, video, or camera;
+- turn detections into small structured perception events;
+- connect those events to robot decisions later;
+- keep the first demo fast enough to run locally on a Mac.
+
+### Setup
+
+```bash
+scripts/setup_yolo26_mlx_macos.sh
+source .venv/bin/activate
+```
+
+The setup script downloads `thewebAI/yolo-mlx` locally into `third_party/yolo-mlx`, installs it in the virtual environment, downloads `yolo26n.pt`, and converts it to `models/yolo26n.npz`.
+
+The downloaded model and third-party checkout are intentionally ignored by Git so the repository stays small.
+
+### Run Detection
+
+Image:
+
+```bash
+python hornsby_ai/physical_ai.py --source path/to/image.jpg --save
+```
+
+Camera:
+
+```bash
+python hornsby_ai/physical_ai.py --source 0 --show
+```
+
+Output is JSON so it can later feed motor control, navigation, or decision logic.
+
 ## Current Design Files
 
 The repository includes the first 3D/mechanical reference files in [`3D/`](3D/):

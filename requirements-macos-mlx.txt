@@ -1,0 +1,4 @@
+mlx>=0.30.3,<0.31
+numpy
+pillow
+opencv-python
