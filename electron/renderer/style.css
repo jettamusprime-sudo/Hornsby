@@ -91,6 +91,18 @@ input {
   color: #eef4ed;
 }
 
+
+.toggle-row {
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+}
+
+.toggle-row input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
 select {
   height: 38px;
   padding: 0 10px;

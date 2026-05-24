@@ -70,6 +70,8 @@ ipcMain.handle('perception:start', (_event, options = {}) => {
   const source = String(options.source || '0');
   const confidence = String(options.confidence || '0.25');
   const frameInterval = String(options.frameInterval || '0.15');
+  const orangeThreshold = String(options.orangeThreshold || '0.58');
+  const useOrangeBall = options.orangeBall !== false;
 
   perceptionProcess = spawn(
     pythonPath,
@@ -83,6 +85,9 @@ ipcMain.handle('perception:start', (_event, options = {}) => {
       confidence,
       '--frame-interval',
       frameInterval,
+      useOrangeBall ? '--orange-ball' : '--no-orange-ball',
+      '--orange-threshold',
+      orangeThreshold,
     ],
     {
       cwd: rootDir,

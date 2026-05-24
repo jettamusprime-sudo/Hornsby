@@ -5,6 +5,7 @@ Hornsby is being built around a simple physical AI loop:
 ```text
 camera or image
   -> YOLO26 MLX perception
+  -> orange ping pong ball classifier
   -> structured detection events
   -> robot decision logic
   -> motor and sensor actions
@@ -47,6 +48,38 @@ Example event:
   ]
 }
 ```
+
+## Orange Ping Pong Ball Classification
+
+Hornsby includes a lightweight classifier for the first physical target: an orange ping pong ball. It runs beside YOLO26 and emits detections labeled `orange_ping_pong_ball`. The classifier looks for orange HSV regions, validates roundness and fill ratio, then blends those features with an optional learned prototype model.
+
+Camera mode enables it by default:
+
+```bash
+python hornsby_ai/physical_ai.py --source 0 --show
+```
+
+Useful tuning options:
+
+```bash
+python hornsby_ai/physical_ai.py --source 0 --orange-threshold 0.62
+python hornsby_ai/physical_ai.py --source 0 --no-orange-ball
+```
+
+To improve validation accuracy, collect positive and hard-negative examples in a JSONL manifest:
+
+```json
+{"image":"data/orange-ball/frame-001.jpg","box":[210,140,268,198],"label":1}
+{"image":"data/orange-ball/frame-002.jpg","box":[80,92,160,170],"label":0}
+```
+
+Then train the prototype model:
+
+```bash
+scripts/train_orange_ball_classifier.py data/orange-ball/manifest.jsonl
+```
+
+The generated `models/orange_ping_pong_classifier.json` is loaded automatically by the perception script when present.
 
 ## Suggested Robot Behaviors
 

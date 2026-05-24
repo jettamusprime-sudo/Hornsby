@@ -26,6 +26,10 @@ class Detection:
     label: str
     confidence: float
     box: list[float]
+    source_model: str = "yolo26"
+    orange_score: float | None = None
+    roundness: float | None = None
+    validation_score: float | None = None
 
 
 @dataclass
@@ -94,7 +98,34 @@ def emit(perception: PerceptionFrame) -> None:
     print(json.dumps(asdict(perception), ensure_ascii=False), flush=True)
 
 
-def predict_image(model: Any, source: str, confidence: float, save: bool) -> PerceptionFrame:
+def load_orange_classifier(enabled: bool, model_path: str, threshold: float) -> Any | None:
+    if not enabled:
+        return None
+
+    try:
+        from hornsby_ai.orange_ball_classifier import OrangeBallClassifier
+    except ImportError:
+        from orange_ball_classifier import OrangeBallClassifier
+
+    return OrangeBallClassifier(model_path=model_path, threshold=threshold)
+
+
+def orange_detections(classifier: Any | None, frame: Any) -> list[Detection]:
+    if classifier is None:
+        return []
+
+    candidates = classifier.detect(frame)
+    return [Detection(**asdict(candidate)) for candidate in candidates]
+
+
+def predict_image(
+    model: Any,
+    source: str,
+    confidence: float,
+    save: bool,
+    orange_classifier: Any | None,
+) -> PerceptionFrame:
+    import cv2
     from PIL import Image
 
     with Image.open(source) as image:
@@ -102,6 +133,9 @@ def predict_image(model: Any, source: str, confidence: float, save: bool) -> Per
 
     results = model.predict(source, conf=confidence, save=save)
     detections = normalize_result(results[0]) if results else []
+    frame = cv2.imread(source)
+    if frame is not None:
+        detections.extend(orange_detections(orange_classifier, frame))
     return PerceptionFrame(
         source=source,
         width=width,
@@ -117,6 +151,7 @@ def predict_camera(
     confidence: float,
     show: bool,
     frame_interval: float,
+    orange_classifier: Any | None,
 ) -> None:
     import cv2
 
@@ -132,6 +167,7 @@ def predict_camera(
 
             results = model.predict(frame, conf=confidence)
             detections = normalize_result(results[0]) if results else []
+            detections.extend(orange_detections(orange_classifier, frame))
             height, width = frame.shape[:2]
             perception = PerceptionFrame(
                 source=str(camera_index),
@@ -168,18 +204,36 @@ def parse_args() -> argparse.Namespace:
         default=0.15,
         help="Seconds to wait between camera inference frames",
     )
+    parser.add_argument(
+        "--orange-ball",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable orange ping pong ball classifier",
+    )
+    parser.add_argument(
+        "--orange-threshold",
+        type=float,
+        default=0.58,
+        help="Minimum orange ping pong ball classifier confidence",
+    )
+    parser.add_argument(
+        "--orange-model",
+        default="models/orange_ping_pong_classifier.json",
+        help="Optional learned prototype model for orange ball validation",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     model = load_model(Path(args.model))
+    orange_classifier = load_orange_classifier(args.orange_ball, args.orange_model, args.orange_threshold)
 
     if args.source.isdigit():
-        predict_camera(model, int(args.source), args.conf, args.show, args.frame_interval)
+        predict_camera(model, int(args.source), args.conf, args.show, args.frame_interval, orange_classifier)
         return
 
-    perception = predict_image(model, args.source, args.conf, args.save)
+    perception = predict_image(model, args.source, args.conf, args.save, orange_classifier)
     emit(perception)
 
     if perception.best_target:

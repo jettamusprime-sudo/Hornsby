@@ -37,6 +37,8 @@ The script:
 python hornsby_ai/physical_ai.py --source 0 --show
 ```
 
+The orange ping pong ball classifier is enabled by default and emits `orange_ping_pong_ball` when the target is visible. Use `--orange-threshold 0.62` to make validation stricter.
+
 Press `q` in the preview window to stop.
 
 ## Run With An Image

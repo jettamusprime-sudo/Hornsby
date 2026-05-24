@@ -93,6 +93,12 @@ Camera:
 python hornsby_ai/physical_ai.py --source 0 --show
 ```
 
+Orange ping pong ball mode is enabled by default. It adds an `orange_ping_pong_ball` detection when a round orange target is visible. Tune it with:
+
+```bash
+python hornsby_ai/physical_ai.py --source 0 --orange-threshold 0.58
+```
+
 Output is JSON so it can later feed motor control, navigation, or decision logic.
 
 ## Control App Direction

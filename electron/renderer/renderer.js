@@ -6,6 +6,8 @@ const cameraSelect = document.getElementById('cameraSelect');
 const source = document.getElementById('source');
 const confidence = document.getElementById('confidence');
 const frameInterval = document.getElementById('frameInterval');
+const orangeBall = document.getElementById('orangeBall');
+const orangeThreshold = document.getElementById('orangeThreshold');
 const pythonReady = document.getElementById('pythonReady');
 const modelReady = document.getElementById('modelReady');
 const bestTarget = document.getElementById('bestTarget');
@@ -45,7 +47,10 @@ function renderDetections(frame) {
   for (const detection of detections.slice(0, 8)) {
     const item = document.createElement('div');
     item.className = 'detection';
-    item.innerHTML = `<strong>${detection.label}</strong><span>${(detection.confidence * 100).toFixed(1)}%</span>`;
+    const detail = detection.source_model === 'orange_ball_classifier'
+      ? ` orange=${(detection.orange_score * 100).toFixed(0)}% round=${(detection.roundness * 100).toFixed(0)}%`
+      : '';
+    item.innerHTML = `<strong>${detection.label}</strong><span>${(detection.confidence * 100).toFixed(1)}%${detail}</span>`;
     detectionList.appendChild(item);
   }
 }
@@ -171,6 +176,8 @@ start.addEventListener('click', async () => {
       source: source.value,
       confidence: confidence.value,
       frameInterval: frameInterval.value,
+      orangeBall: orangeBall.checked,
+      orangeThreshold: orangeThreshold.value,
     });
     updateStatus(status);
   } catch (error) {
