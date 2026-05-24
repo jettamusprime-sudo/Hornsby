@@ -20,12 +20,20 @@
         <section class="panel controls">
           <h2>Perception</h2>
           <label>
-            Camera / source
+            Camera
+            <select id="cameraSelect"></select>
+          </label>
+          <label>
+            Source index
             <input id="source" value="0" />
           </label>
           <label>
             Confidence
             <input id="confidence" type="number" min="0.05" max="0.95" step="0.05" value="0.25" />
+          </label>
+          <label>
+            Frame interval
+            <input id="frameInterval" type="number" min="0.05" max="2" step="0.05" value="0.15" />
           </label>
           <div class="actions">
             <button id="start">Start</button>
@@ -45,6 +53,10 @@
 
         <section class="panel detections">
           <h2>Detections</h2>
+          <div class="preview">
+            <video id="cameraPreview" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+          </div>
           <div id="bestTarget" class="target">No target</div>
           <div id="detectionList" class="detection-list"></div>
         </section>

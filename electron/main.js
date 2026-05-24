@@ -69,6 +69,7 @@ ipcMain.handle('perception:start', (_event, options = {}) => {
 
   const source = String(options.source || '0');
   const confidence = String(options.confidence || '0.25');
+  const frameInterval = String(options.frameInterval || '0.15');
 
   perceptionProcess = spawn(
     pythonPath,
@@ -80,6 +81,8 @@ ipcMain.handle('perception:start', (_event, options = {}) => {
       source,
       '--conf',
       confidence,
+      '--frame-interval',
+      frameInterval,
     ],
     {
       cwd: rootDir,

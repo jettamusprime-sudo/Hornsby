@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +31,9 @@ class Detection:
 @dataclass
 class PerceptionFrame:
     source: str
+    width: int
+    height: int
+    timestamp: float
     detections: list[Detection]
 
     @property
@@ -85,13 +90,34 @@ def normalize_result(result: Any) -> list[Detection]:
     return detections
 
 
+def emit(perception: PerceptionFrame) -> None:
+    print(json.dumps(asdict(perception), ensure_ascii=False), flush=True)
+
+
 def predict_image(model: Any, source: str, confidence: float, save: bool) -> PerceptionFrame:
+    from PIL import Image
+
+    with Image.open(source) as image:
+        width, height = image.size
+
     results = model.predict(source, conf=confidence, save=save)
     detections = normalize_result(results[0]) if results else []
-    return PerceptionFrame(source=source, detections=detections)
+    return PerceptionFrame(
+        source=source,
+        width=width,
+        height=height,
+        timestamp=time.time(),
+        detections=detections,
+    )
 
 
-def predict_camera(model: Any, camera_index: int, confidence: float, show: bool) -> None:
+def predict_camera(
+    model: Any,
+    camera_index: int,
+    confidence: float,
+    show: bool,
+    frame_interval: float,
+) -> None:
     import cv2
 
     capture = cv2.VideoCapture(camera_index)
@@ -106,14 +132,24 @@ def predict_camera(model: Any, camera_index: int, confidence: float, show: bool)
 
             results = model.predict(frame, conf=confidence)
             detections = normalize_result(results[0]) if results else []
-            perception = PerceptionFrame(source=str(camera_index), detections=detections)
-            print(json.dumps(asdict(perception), ensure_ascii=False))
+            height, width = frame.shape[:2]
+            perception = PerceptionFrame(
+                source=str(camera_index),
+                width=width,
+                height=height,
+                timestamp=time.time(),
+                detections=detections,
+            )
+            emit(perception)
 
             if show:
                 annotated = results[0].plot() if results else frame
                 cv2.imshow("Hornsby Physical AI", annotated)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
+
+            if frame_interval > 0:
+                time.sleep(frame_interval)
     finally:
         capture.release()
         cv2.destroyAllWindows()
@@ -126,6 +162,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--conf", type=float, default=0.25, help="Detection confidence threshold")
     parser.add_argument("--save", action="store_true", help="Save annotated image/video to results/")
     parser.add_argument("--show", action="store_true", help="Show live camera window")
+    parser.add_argument(
+        "--frame-interval",
+        type=float,
+        default=0.15,
+        help="Seconds to wait between camera inference frames",
+    )
     return parser.parse_args()
 
 
@@ -134,17 +176,17 @@ def main() -> None:
     model = load_model(Path(args.model))
 
     if args.source.isdigit():
-        predict_camera(model, int(args.source), args.conf, args.show)
+        predict_camera(model, int(args.source), args.conf, args.show, args.frame_interval)
         return
 
     perception = predict_image(model, args.source, args.conf, args.save)
-    print(json.dumps(asdict(perception), indent=2, ensure_ascii=False))
+    emit(perception)
 
     if perception.best_target:
         target = perception.best_target
-        print(f"Hornsby sees {target.label} with {target.confidence:.2f} confidence.")
+        print(f"Hornsby sees {target.label} with {target.confidence:.2f} confidence.", file=sys.stderr)
     else:
-        print("Hornsby does not see a target yet.")
+        print("Hornsby does not see a target yet.", file=sys.stderr)
 
 
 if __name__ == "__main__":

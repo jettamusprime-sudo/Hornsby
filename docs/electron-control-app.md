@@ -45,7 +45,7 @@ Hardware bridge
 
 The first version should have only what is needed:
 
-- `Perception`: camera preview, detections, FPS, confidence threshold.
+- `Perception`: camera selector, live preview, detection overlay, confidence threshold.
 - `Robot`: armed/disarmed state, manual movement buttons, emergency stop.
 - `Setup`: model status, environment checks, camera selection.
 - `Logs`: perception events and errors.
@@ -59,16 +59,18 @@ Real-time control, MLX inference, and hardware interfaces should stay in small b
 ## Minimal First Implementation
 
 1. Create an Electron shell.
-2. Add a start button that runs:
+2. Add a camera selector and live preview.
+3. Add a start button that runs:
 
 ```bash
 python hornsby_ai/physical_ai.py --source 0
 ```
 
-3. Read JSON lines from stdout.
-4. Show detections in the UI.
-5. Add a stop button.
-6. Add an emergency stop placeholder before motor control exists.
+4. Read JSON lines from stdout.
+5. Draw detection boxes over the camera preview.
+6. Show detections in the UI.
+7. Add a stop button.
+8. Add an emergency stop placeholder before motor control exists.
 
 ## Later
 
