@@ -4,6 +4,24 @@ Hornsby is an experimental educational robot for learning programming, computer 
 
 The goal is to make robotics feel practical, low-cost, and approachable: a small robot that can be built, programmed, observed, improved, and used as a platform for learning how software interacts with the physical world.
 
+## Quick Start
+
+For the current hackathon prototype on Apple Silicon:
+
+```bash
+scripts/setup_yolo26_mlx_macos.sh
+source .venv/bin/activate
+python hornsby_ai/physical_ai.py --source 0 --show
+```
+
+This starts the local YOLO26 MLX perception loop using the Mac camera.
+
+Useful docs:
+
+- [Hackathon quick start](docs/hackathon-quick-start.md)
+- [Physical AI pipeline](docs/physical-ai.md)
+- [Electron control app concept](docs/electron-control-app.md)
+
 ## Purpose
 
 Hornsby is designed as a hands-on practice robot for:
@@ -69,6 +87,19 @@ python hornsby_ai/physical_ai.py --source 0 --show
 ```
 
 Output is JSON so it can later feed motor control, navigation, or decision logic.
+
+## Control App Direction
+
+An Electron app is a good fit for Hornsby because it can provide a friendly local control panel while keeping the AI runtime separate.
+
+The recommended architecture is:
+
+- Electron for UI, camera preview, setup status, logs, and robot controls;
+- Python/MLX as a local perception worker;
+- structured JSON events between the UI and the worker;
+- later, a hardware bridge for motors and sensors.
+
+Electron should not become the real-time robotics layer. It should manage, visualize, and coordinate the system.
 
 ## Current Design Files
 
