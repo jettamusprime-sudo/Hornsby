@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hornsby Control</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div>
+          <h1>Hornsby Control</h1>
+          <p>Physical AI dashboard for YOLO26 MLX perception.</p>
+        </div>
+        <div id="runState" class="state">Idle</div>
+      </header>
+
+      <main class="layout">
+        <section class="panel controls">
+          <h2>Perception</h2>
+          <label>
+            Camera / source
+            <input id="source" value="0" />
+          </label>
+          <label>
+            Confidence
+            <input id="confidence" type="number" min="0.05" max="0.95" step="0.05" value="0.25" />
+          </label>
+          <div class="actions">
+            <button id="start">Start</button>
+            <button id="stop">Stop</button>
+          </div>
+          <div class="status-grid">
+            <div>
+              <span>Python</span>
+              <strong id="pythonReady">checking</strong>
+            </div>
+            <div>
+              <span>Model</span>
+              <strong id="modelReady">checking</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel detections">
+          <h2>Detections</h2>
+          <div id="bestTarget" class="target">No target</div>
+          <div id="detectionList" class="detection-list"></div>
+        </section>
+
+        <section class="panel robot">
+          <h2>Robot</h2>
+          <div class="robot-state">
+            <div class="armed">Disarmed</div>
+            <button class="estop">Emergency Stop</button>
+          </div>
+          <div class="pad">
+            <button>Forward</button>
+            <button>Left</button>
+            <button>Stop</button>
+            <button>Right</button>
+            <button>Back</button>
+          </div>
+        </section>
+
+        <section class="panel logs">
+          <h2>Logs</h2>
+          <pre id="logs"></pre>
+        </section>
+      </main>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "hornsby-control",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local Electron control app for Hornsby physical AI.",
+  "main": "electron/main.js",
+  "scripts": {
+    "app": "electron .",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
+  }
+}

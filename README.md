@@ -16,6 +16,13 @@ python hornsby_ai/physical_ai.py --source 0 --show
 
 This starts the local YOLO26 MLX perception loop using the Mac camera.
 
+To open the local control app:
+
+```bash
+npm install
+npm start
+```
+
 Useful docs:
 
 - [Hackathon quick start](docs/hackathon-quick-start.md)
