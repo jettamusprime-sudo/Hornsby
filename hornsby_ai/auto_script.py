@@ -117,6 +117,23 @@ def main() -> None:
             # 4. Run Orange Ball Classifier (detect ping pong ball)
             balls = classifier.detect(frame) if classifier else []
             
+            # 4b. Integrate YOLO's native class 49 ("orange") detections into ball candidates
+            for det in yolo_dets:
+                if det.label == "orange_ping_pong_ball":
+                    from hornsby_ai.orange_ball_classifier import OrangeBallCandidate, _iou
+                    if all(_iou(det.box, b.box) < 0.40 for b in balls):
+                        balls.append(
+                            OrangeBallCandidate(
+                                label="orange_ping_pong_ball",
+                                confidence=det.confidence,
+                                box=det.box,
+                                source_model="yolo26",
+                                orange_score=1.0,
+                                roundness=1.0,
+                                validation_score=1.0
+                            )
+                        )
+            
             # 5. Extract Best Target Ball
             target_ball = None
             if balls:

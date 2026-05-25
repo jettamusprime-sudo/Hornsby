@@ -94,6 +94,11 @@ def normalize_result(result: Any) -> list[Detection]:
     for box, score, class_id in zip(xyxy, conf, cls):
         class_index = int(class_id)
         label = names.get(class_index, str(class_index)) if isinstance(names, dict) else str(class_index)
+        
+        # Map raw YOLO class 49 ("orange") to "orange_ping_pong_ball" for unified tracking
+        if label == "49" or label == "orange":
+            label = "orange_ping_pong_ball"
+            
         detections.append(
             Detection(
                 label=label,
