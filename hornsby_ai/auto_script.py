@@ -220,8 +220,8 @@ def main() -> None:
                         
                         print(f"[AUTO] Crop isolated & saved: {crop_filename}", file=sys.stderr, flush=True)
                 
-                # Decision guidelines (Calibrated ESTOP threshold to 8% of screen width based on actual sensor data)
-                if relative_width > 0.08:
+                # Decision guidelines (Failsafe ESTOP threshold set to 2% of screen width)
+                if relative_width > 0.02:
                     action = "ESTOP (ARRIVED)"
                     action_color = (0, 0, 255) # Red
                     detail_msg = f"Target reached! Ball is close ({relative_width:.1%}). Halting motors."
