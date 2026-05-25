@@ -101,10 +101,11 @@ class OrangeBallClassifier:
             features = np.array([orange_ratio, circularity, aspect, saturation, size_ratio], dtype=np.float32)
             heuristic_score = self._heuristic_score(features)
             validation_score = self._prototype_score(features)
-            confidence = 0.70 * heuristic_score + 0.30 * validation_score
+            # Lean more on robust color/shape heuristics (0.85) to absorb close-up blur/glare ML drops
+            confidence = 0.85 * heuristic_score + 0.15 * validation_score
 
-            # Enforce a slightly higher threshold for high confidence tracking
-            if confidence < 0.60:
+            # Lowered confidence threshold to 0.40 to prevent filtering out blurry close-up balls
+            if confidence < 0.40:
                 continue
 
             candidates.append(
