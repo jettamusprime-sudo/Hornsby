@@ -88,8 +88,8 @@ class OrangeBallClassifier:
             circularity = 0.0 if perimeter <= 0 else min(1.0, 4.0 * math.pi * area / (perimeter * perimeter))
             aspect = min(w, h) / max(w, h)
             
-            # STRICT SHAPE FILTERS: A ping pong ball is extremely round and square-bounded!
-            if circularity < 0.70 or aspect < 0.70:
+            # RELAXED SHAPE FILTERS: Handles camera blur and lighting glare when ball is extremely close-up.
+            if circularity < 0.52 or aspect < 0.52:
                 continue
 
             roi_mask = mask[y : y + h, x : x + w]

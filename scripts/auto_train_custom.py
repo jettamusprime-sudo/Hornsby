@@ -60,8 +60,12 @@ def main():
         
         # Detect orange ball automatically
         balls = classifier.detect(img)
-        if balls:
-            best_ball = max(balls, key=lambda b: b.confidence)
+        # Ensure we don't pick up massive background contours (like the whole image) as the "ball"
+        h, w = img.shape[:2]
+        valid_balls = [b for b in balls if (b.box[2] - b.box[0]) < w * 0.50]
+        
+        if valid_balls:
+            best_ball = max(valid_balls, key=lambda b: b.confidence)
             x1, y1, x2, y2 = best_ball.box
             
             # Save positive entry (1)
