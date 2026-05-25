@@ -16,6 +16,7 @@ import time
 import os
 import uuid
 import json
+import signal
 from pathlib import Path
 from dataclasses import asdict
 
@@ -68,6 +69,31 @@ def parse_args():
 def main() -> None:
     args = parse_args()
     
+    # Register gracefull exit for SIGTERM signal (used by Electron to terminate child)
+    def sigterm_handler(signum, frame):
+        sys.exit(0)
+    signal.signal(signal.SIGTERM, sigterm_handler)
+    
+    # Telemetry accumulator variables
+    session_start = time.time()
+    total_frames = 0
+    ball_detections = 0
+    yolo_hits = 0
+    custom_hits = 0
+    
+    actions_count = {
+        "SEARCHING": 0,
+        "STEER LEFT": 0,
+        "STEER RIGHT": 0,
+        "DRIVE FORWARD": 0,
+        "ESTOP (ARRIVED)": 0
+    }
+    
+    confidences = []
+    orange_scores = []
+    roundnesses = []
+    validation_scores = []
+    
     # 1. Initialize models
     model_path = Path(args.model)
     orange_model = Path(args.orange_model)
@@ -108,6 +134,7 @@ def main() -> None:
             if not ok:
                 break
 
+            total_frames += 1
             height, width = frame.shape[:2]
             
             # 3. Run YOLO26 Inference (detect robot/environment objects)
@@ -148,6 +175,17 @@ def main() -> None:
             relative_width = 0.0
 
             if target_ball:
+                ball_detections += 1
+                if target_ball.source_model == "yolo26":
+                    yolo_hits += 1
+                else:
+                    custom_hits += 1
+                
+                confidences.append(target_ball.confidence)
+                orange_scores.append(target_ball.orange_score)
+                roundnesses.append(target_ball.roundness)
+                validation_scores.append(target_ball.validation_score)
+
                 x1, y1, x2, y2 = target_ball.box
                 target_center_x = int((x1 + x2) / 2)
                 target_center_y = int((y1 + y2) / 2)
@@ -199,6 +237,9 @@ def main() -> None:
                     action = "DRIVE FORWARD"
                     action_color = (0, 255, 0)
                     detail_msg = f"Ball centered at {relative_x:.1%} X. Driving forward to target."
+            
+            # Increment action statistics
+            actions_count[action] = actions_count.get(action, 0) + 1
             
             # Print decision to stderr so it shows up in Electron logs panel
             print(f"[AUTO] Status: {action.ljust(15)} | {detail_msg}", file=sys.stderr, flush=True)
@@ -276,6 +317,53 @@ def main() -> None:
         capture.release()
         if args.show:
             cv2.destroyAllWindows()
+            
+        # Compile and write session report
+        duration = time.time() - session_start
+        report_path = ROOT / "results" / "session_report.txt"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        avg_conf = np.mean(confidences) if confidences else 0.0
+        avg_orange = np.mean(orange_scores) if orange_scores else 0.0
+        avg_round = np.mean(roundnesses) if roundnesses else 0.0
+        avg_val = np.mean(validation_scores) if validation_scores else 0.0
+        
+        report_content = f"""==================================================
+              HORNSBY CALIBRATION REPORT                 
+==================================================
+Session Duration: {duration:.1f} seconds
+Total Frames Processed: {total_frames}
+Ball Detections: {ball_detections} (Detection Rate: {ball_detections/max(1, total_frames):.1%})
+
+Tracking Source Breakdown:
+- Custom HSV/Shape Detector Hits: {custom_hits}
+- Deep Learning YOLO Class 49 Hits: {yolo_hits}
+
+Average Target Quality Metrics:
+- Average Target Confidence: {avg_conf:.1%}
+- Average Orange Color Density: {avg_orange:.1%}
+- Average Shape Roundness: {avg_round:.1%}
+- Average ML Validation Score: {avg_val:.1%}
+
+Autonomous Action Statistics:
+- Searching: {actions_count.get('SEARCHING', 0)}
+- Steer Left: {actions_count.get('STEER LEFT', 0)}
+- Steer Right: {actions_count.get('STEER RIGHT', 0)}
+- Drive Forward: {actions_count.get('DRIVE FORWARD', 0)}
+- Arrived (ESTOP): {actions_count.get('ESTOP (ARRIVED)', 0)}
+
+Optimal Calibration Variables:
+- GUI Confidence Threshold: {args.conf}
+- GUI Orange Threshold: {args.orange_threshold}
+- GUI Frame Interval: {args.frame_interval}s
+==================================================
+"""
+        with open(report_path, "w", encoding="utf-8") as rf:
+            rf.write(report_content)
+            
+        # Print a short summary to stderr as well so they see it in the Electron logs panel
+        print(f"\n[AUTO] Calibration report saved to results/session_report.txt!", file=sys.stderr, flush=True)
+        print(f"[AUTO] Total Frames: {total_frames} | Ball Detections: {ball_detections}", file=sys.stderr, flush=True)
 
 
 def load_orange_classifier(enabled: bool, model_path: str, threshold: float) -> Any | None:
