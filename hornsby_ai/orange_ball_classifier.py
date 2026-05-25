@@ -57,10 +57,10 @@ class OrangeBallClassifier:
     def detect(self, frame: np.ndarray) -> list[OrangeBallCandidate]:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         
-        # Tighten HSV bounds to isolate highly-saturated, bright orange ping pong balls.
-        # This completely filters out dull skin tones, hair, glasses, shadows, and background wood.
-        lower = np.array([6, 140, 90], dtype=np.uint8)
-        upper = np.array([22, 255, 255], dtype=np.uint8)
+        # Optimized HSV bounds based on the actual color profile of your orange ball under your room lighting.
+        # This prevents filtering out the ball under dimmer, warmer, or shadow conditions.
+        lower = np.array([3, 75, 50], dtype=np.uint8)
+        upper = np.array([24, 255, 255], dtype=np.uint8)
         
         mask = cv2.inRange(hsv, lower, upper)
         mask = cv2.medianBlur(mask, 5)

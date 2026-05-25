@@ -95,7 +95,7 @@ def main():
         else:
             # Fallback color thresholding if strict classifier missed it due to new environment
             hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-            lower = np.array([4, 120, 80], dtype=np.uint8)
+            lower = np.array([3, 75, 50], dtype=np.uint8)
             upper = np.array([24, 255, 255], dtype=np.uint8)
             mask = cv2.inRange(hsv, lower, upper)
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
