@@ -54,10 +54,21 @@ class PerceptionFrame:
 def load_model(model_path: Path) -> Any:
     try:
         from yolo26mlx import YOLO
-    except ImportError as exc:
-        raise SystemExit(
-            "YOLO26 MLX is not installed. Run: scripts/setup_yolo26_mlx_macos.sh"
-        ) from exc
+    except ImportError:
+        # Fallback to local third_party directory
+        src_path = Path(__file__).resolve().parent.parent / "third_party" / "yolo-mlx" / "src"
+        if src_path.exists():
+            sys.path.insert(0, str(src_path))
+            try:
+                from yolo26mlx import YOLO
+            except ImportError as exc:
+                raise SystemExit(
+                    "YOLO26 MLX is not installed. Run: scripts/setup_yolo26_mlx_macos.sh"
+                ) from exc
+        else:
+            raise SystemExit(
+                "YOLO26 MLX is not installed. Run: scripts/setup_yolo26_mlx_macos.sh"
+            )
 
     if not model_path.exists():
         raise SystemExit(f"Model not found: {model_path}")

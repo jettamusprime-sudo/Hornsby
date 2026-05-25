@@ -48,7 +48,7 @@ function renderDetections(frame) {
     const item = document.createElement('div');
     item.className = 'detection';
     const detail = detection.source_model === 'orange_ball_classifier'
-      ? ` orange=${(detection.orange_score * 100).toFixed(0)}% round=${(detection.roundness * 100).toFixed(0)}%`
+      ? ` orange=${(detection.orange_score * 100).toFixed(0)}% round=${(detection.roundness * 100).toFixed(0)}% ML=${(detection.validation_score * 100).toFixed(0)}%`
       : '';
     item.innerHTML = `<strong>${detection.label}</strong><span>${(detection.confidence * 100).toFixed(1)}%${detail}</span>`;
     detectionList.appendChild(item);

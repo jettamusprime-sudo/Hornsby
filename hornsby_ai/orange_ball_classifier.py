@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -51,11 +52,16 @@ class OrangeBallClassifier:
             self.negative_centroid = np.array(negative, dtype=np.float32)
         if scale:
             self.feature_scale = np.array(scale, dtype=np.float32)
+        print(f"[+] Loaded orange ball prototype ML model from {model_path.name}!", file=sys.stderr, flush=True)
 
     def detect(self, frame: np.ndarray) -> list[OrangeBallCandidate]:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        lower = np.array([4, 80, 80], dtype=np.uint8)
-        upper = np.array([28, 255, 255], dtype=np.uint8)
+        
+        # Tighten HSV bounds to isolate highly-saturated, bright orange ping pong balls.
+        # This completely filters out dull skin tones, hair, glasses, shadows, and background wood.
+        lower = np.array([6, 140, 90], dtype=np.uint8)
+        upper = np.array([22, 255, 255], dtype=np.uint8)
+        
         mask = cv2.inRange(hsv, lower, upper)
         mask = cv2.medianBlur(mask, 5)
         kernel = np.ones((5, 5), np.uint8)
@@ -69,7 +75,8 @@ class OrangeBallClassifier:
 
         for contour in contours:
             area = float(cv2.contourArea(contour))
-            if area < 80:
+            # Require a minimum size to avoid tiny noise spots
+            if area < 100:
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
@@ -80,6 +87,11 @@ class OrangeBallClassifier:
             perimeter = float(cv2.arcLength(contour, True))
             circularity = 0.0 if perimeter <= 0 else min(1.0, 4.0 * math.pi * area / (perimeter * perimeter))
             aspect = min(w, h) / max(w, h)
+            
+            # STRICT SHAPE FILTERS: A ping pong ball is extremely round and square-bounded!
+            if circularity < 0.70 or aspect < 0.70:
+                continue
+
             roi_mask = mask[y : y + h, x : x + w]
             orange_ratio = float(cv2.countNonZero(roi_mask)) / max(1, w * h)
             size_ratio = min(1.0, area / image_area * 30.0)
@@ -89,9 +101,10 @@ class OrangeBallClassifier:
             features = np.array([orange_ratio, circularity, aspect, saturation, size_ratio], dtype=np.float32)
             heuristic_score = self._heuristic_score(features)
             validation_score = self._prototype_score(features)
-            confidence = 0.75 * heuristic_score + 0.25 * validation_score
+            confidence = 0.70 * heuristic_score + 0.30 * validation_score
 
-            if confidence < self.threshold:
+            # Enforce a slightly higher threshold for high confidence tracking
+            if confidence < 0.60:
                 continue
 
             candidates.append(
@@ -106,7 +119,13 @@ class OrangeBallClassifier:
                 )
             )
 
-        return self._dedupe(candidates)
+        # ISOLATION: Sort by confidence and return ONLY the single best target candidate
+        # to prevent the robot from getting confused by multiple background noise reflections!
+        if not candidates:
+            return []
+        
+        best_candidate = max(candidates, key=lambda item: item.confidence)
+        return [best_candidate]
 
     def _heuristic_score(self, features: np.ndarray) -> float:
         orange_ratio, circularity, aspect, saturation, size_ratio = features

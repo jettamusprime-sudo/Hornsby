@@ -8,7 +8,7 @@ let perceptionProcess = null;
 
 const rootDir = path.resolve(__dirname, '..');
 const pythonPath = path.join(rootDir, '.venv', 'bin', 'python');
-const perceptionScript = path.join(rootDir, 'hornsby_ai', 'physical_ai.py');
+const perceptionScript = path.join(rootDir, 'hornsby_ai', 'auto_script.py');
 const modelPath = path.join(rootDir, 'models', 'yolo26n.npz');
 
 function createWindow() {
